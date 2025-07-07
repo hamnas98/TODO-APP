@@ -4,6 +4,16 @@ function App() {
   const [todos, setTodos] = useState([]);
   const [text, setText] = useState("");
 
+    // laod local storage once on initial render
+    useEffect(() => {
+      const stored = localStorage.getItem("todos");
+      if (stored) setTodos(JSON.parse(stored));
+    }, []);
+  
+    // Save to local storage whenever todos change
+    useEffect(() => {
+      localStorage.setItem("todos", JSON.stringify(todos));
+    }, [todos]);
   
 
   const addTodo = () => {
