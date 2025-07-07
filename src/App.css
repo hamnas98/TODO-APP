@@ -40,3 +40,42 @@
 .read-the-docs {
   color: #888;
 }
+.app {
+  background: #fff;
+  color: #000;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.app.dark {
+  background: #121212;
+  color: #fff;
+}
+
+button {
+  margin: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #eee;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #ddd;
+}
+
+button.active {
+  background: #007bff;
+  color: white;
+}
+
+.app.dark button {
+  background: #2c2c2c;
+  color: #ccc;
+}
+
+.app.dark button.active {
+  background: #1e90ff;
+  color: white;
+}
