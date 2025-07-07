@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 function App() {
   const [todos, setTodos] = useState([]);
   const [text, setText] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("all"); // "all" | "completed" | "pending"
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -11,20 +11,21 @@ function App() {
     if (stored) setTodos(JSON.parse(stored));
   }, []);
 
-  // Save to localStorage whenever todos change
+  // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem("todos", JSON.stringify(todos));
   }, [todos]);
 
   const addTodo = () => {
-    if (text.trim() === "") return alert("Task cannot be empty");
-    if (todos.some((todo) => todo.text === text.trim())) {
+    const trimmed = text.trim();
+    if (trimmed === "") return alert("Task cannot be empty");
+    if (todos.some((todo) => todo.text === trimmed)) {
       return alert("Duplicate task!");
     }
 
     const newTodo = {
       id: Date.now(),
-      text: text.trim(),
+      text: trimmed,
       completed: false,
       createdAt: new Date().toISOString(),
     };
@@ -33,7 +34,12 @@ function App() {
     setText("");
   };
 
-  const filteredTodos = todos.filter((todo) => {
+  const deleteTodo = (id) => {
+    setTodos(todos.filter((t) => t.id !== id));
+  };
+
+  // Filtering logic
+  const visibleTodos = todos.filter((todo) => {
     if (filter === "completed") return todo.completed;
     if (filter === "pending") return !todo.completed;
     return true;
@@ -50,76 +56,107 @@ function App() {
         onChange={(e) => setText(e.target.value)}
       />
       <button onClick={addTodo}>Add</button>
-  
-      <div style={{ marginTop: 15, marginBottom: 10 }}>
-        <button onClick={() => setFilter("all")}>All</button>
-        <button onClick={() => setFilter("completed")}>Completed</button>
-        <button onClick={() => setFilter("pending")}>Pending</button>
+
+      {/* Filter Buttons */}
+      <div style={{ marginTop: 20 }}>
+        <button onClick={() => setFilter("all")}>🟢 All</button>
+        <button onClick={() => setFilter("completed")}>✅ Completed</button>
+        <button onClick={() => setFilter("pending")}>🔄 Pending</button>
       </div>
-      <p>✅ Completed: {todos.filter(t => t.completed).length}</p>
+
+      {/* Completed Count Summary */}
+      <div style={{ marginTop: 20, fontWeight: "bold", color: "#2c3e50" }}>
+        ✅ {todos.filter((todo) => todo.completed).length} of {todos.length} tasks completed
+      </div>
+
+      {/* Task List */}
       <ul style={{ marginTop: 20, paddingLeft: 0 }}>
-        {filteredTodos
+        {visibleTodos
           .sort((a, b) => a.completed - b.completed)
           .map((todo) => (
-          <li
-            key={todo.id}
-            style={{
-              listStyle: "none",
-              marginBottom: 10,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              onChange={() =>
-                setTodos(
-                  todos.map((t) =>
+            <li
+              key={todo.id}
+              style={{
+                listStyle: "none",
+                marginBottom: 10,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={todo.completed}
+                onChange={() => {
+                  const updated = todos.map((t) =>
                     t.id === todo.id
                       ? { ...t, completed: !t.completed }
                       : t
-                  )
-                )
-              }
-            />
-            <span
-              style={{
-                flexGrow: 1,
-                marginLeft: 10,
-                textDecoration: todo.completed ? "line-through" : "none",
-              }}
-            >
-              {todo.text} – <small>{timeAgo(todo.createdAt)}</small>
-            </span>
-            <button
-              onClick={() => {
-                const newText = prompt("Edit todo:", todo.text);
-                if (newText && newText !== todo.text) {
-                  setTodos(
-                    todos.map((t) =>
-                      t.id === todo.id ? { ...t, text: newText } : t
-                    )
                   );
-                }
-              }}
-              title="Edit"
-            >
-              ✏️
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm("Are you sure you want to delete this task?")) {
-                  setTodos(todos.filter((t) => t.id !== todo.id));
-                }
-              }}
-              title="Delete"
-            >
-              🗑️
-            </button>
-          </li>
-        ))}
+                  setTodos(updated);
+                }}
+              />
+
+              <span
+                style={{
+                  marginLeft: 8,
+                  textDecoration: todo.completed ? "line-through" : "none",
+                  color: todo.completed ? "gray" : "black",
+                  flexGrow: 1,
+                }}
+              >
+                {todo.text}
+              </span>
+
+              <small style={{ marginLeft: 8, color: "#888" }}>
+                {timeAgo(todo.createdAt)}
+              </small>
+
+              {/* ✏️ Edit Button */}
+              <button
+                onClick={() => {
+                  const newText = prompt("Edit your task:", todo.text);
+                  if (newText && newText.trim() !== "") {
+                    const isDuplicate = todos.some(
+                      (t) =>
+                        t.text.toLowerCase() ===
+                          newText.trim().toLowerCase() &&
+                        t.id !== todo.id
+                    );
+                    if (isDuplicate) {
+                      alert("Duplicate task not allowed.");
+                      return;
+                    }
+
+                    const updated = todos.map((t) =>
+                      t.id === todo.id
+                        ? { ...t, text: newText.trim() }
+                        : t
+                    );
+                    setTodos(updated);
+                  }
+                }}
+                style={{ marginLeft: 8 }}
+              >
+                ✏️
+              </button>
+
+              {/* 🗑️ Delete Button */}
+              <button
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    "Are you sure you want to delete this task?"
+                  );
+                  if (confirmed) {
+                    deleteTodo(todo.id);
+                  }
+                }}
+                style={{ marginLeft: 8 }}
+                title="Delete"
+              >
+                🗑️
+              </button>
+            </li>
+          ))}
       </ul>
     </div>
   );
